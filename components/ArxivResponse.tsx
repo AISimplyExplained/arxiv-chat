@@ -9,7 +9,7 @@ import { useGlobalState } from '@/context/GlobalContext';
 
 export const ArxivResponse = ({ papers }) => {
 
-  const {selectedPdfUrl, setSelectedPdfUrl} = useGlobalState();
+  const { selectedPdfUrl, setSelectedPdfUrl,pdfName, setPdfName } = useGlobalState();
 
   return (
     <div>
@@ -25,7 +25,10 @@ export const ArxivResponse = ({ papers }) => {
           </CardContent>
           <CardFooter className='flex gap-2'>
             <Button><a target='_blank' href={paper.links[0].href}>View on arXiv</a></Button>
-            <Button onClick={() => setSelectedPdfUrl(paper.links[1].href)}
+            <Button onClick={() => {
+              setPdfName({title: paper.title, author: paper.authors[0]})
+              setSelectedPdfUrl(paper.links[1].href)
+            }}
             >View pdf</Button>
           </CardFooter>
         </Card>

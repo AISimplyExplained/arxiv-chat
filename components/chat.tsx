@@ -18,6 +18,9 @@ import { useGlobalState } from '@/context/GlobalContext'
 import { X } from 'lucide-react'
 import axios from 'axios'
 import { Button } from './ui/button'
+import { IconsDocument } from './ui/icons'
+import { nanoid } from 'nanoid'
+import { UserMessage } from './stocks/message'
 
 export interface ChatProps extends React.ComponentProps<'div'> {
   initialMessages?: Message[]
@@ -27,7 +30,15 @@ export interface ChatProps extends React.ComponentProps<'div'> {
 }
 
 export function Chat({ id, className, session, missingKeys }: ChatProps) {
-  const { selectedPdfUrl, setSelectedPdfUrl } = useGlobalState()
+  const {
+    selectedPdfUrl,
+    setSelectedPdfUrl,
+    pdfName,
+    setPdfName,
+    uploadedPdfUrls,
+    setUploadedUrls
+  } = useGlobalState()
+  console.log("urls ===", uploadedPdfUrls)
   const router = useRouter()
   const path = usePathname()
   const [input, setInput] = useState('')
@@ -35,6 +46,7 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
   const { submitUserMessage } = useActions()
   const [messages, setMessages] = useUIState<typeof AI>()
   const [summeryLoading, setSummeryLoading] = useState(false)
+  const [state, setState] = useState('')
 
   const [_, setNewChatId] = useLocalStorage('newChatId', id)
 
@@ -64,11 +76,31 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
   }, [missingKeys])
 
   const readPdfFile = async () => {
-    if (!selectedPdfUrl) {
+    if (!selectedPdfUrl || !pdfName) {
       return
     }
 
     setSummeryLoading(true)
+
+    const content = (
+      <div className="flex flex-col gap-2 max-w-[80%]">
+        <p>The research PDF file</p>
+        <div className="bg-zinc-200 flex items-center p-2 rounded-xl gap-2">
+          <span className="bg-white p-2 rounded-lg flex items-center justify-center">
+            <IconsDocument />
+          </span>
+          <span className="text-wrap">{pdfName.title}</span>
+        </div>
+      </div>
+    )
+
+    setMessages(currentMessages => [
+      ...currentMessages,
+      {
+        id: nanoid(),
+        display: <UserMessage>{content}</UserMessage>
+      }
+    ])
 
     const formData = new FormData()
     formData.append('url', selectedPdfUrl)
@@ -81,9 +113,9 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
       })
       if (res.data?.text) {
         const str = res.data?.text as string
-        const data = [{ text: str}]
+        const data = [{ text: str }]
         const responseMessage = await submitUserMessage(
-          'Please read this as a PDF file',
+          'Please provide a summary, ',
           '',
           [],
           data,
@@ -130,10 +162,20 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
         className={`bg-black fixed right-0 top-0 bottom-0 w-[45%] mt-16 transition ${selectedPdfUrl ? 'block' : 'hidden'}`}
       >
         <div className="flex justify-between items-center px-4">
-          <Button className='bg-white text-black hover:opacity-85' variant={"outline"} onClick={readPdfFile} disabled={summeryLoading}>Pdf Summary</Button>
+          <Button
+            className="bg-white text-black hover:opacity-85"
+            variant={'outline'}
+            onClick={readPdfFile}
+            disabled={summeryLoading}
+          >
+            Pdf Summery
+          </Button>
           <X
             className="text-white m-4 cursor-pointer rounded-full border-2 border-gray-200"
-            onClick={() => setSelectedPdfUrl(null)}
+            onClick={() => {
+              setSelectedPdfUrl(null)
+              setPdfName(null)
+            }}
             size={24}
           />
         </div>
@@ -145,7 +187,6 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
           width="100%"
           height="100%"
         ></embed>
-        
       </Card>
     </>
   )

@@ -5,7 +5,8 @@ import {
   IconArrowElbow,
   IconPlus,
   IconTrash,
-  IconsDocument
+  IconsDocument,
+  SpinnerIcon
 } from '@/components/ui/icons'
 import {
   Tooltip,
@@ -21,7 +22,10 @@ import { nanoid } from 'nanoid'
 import * as React from 'react'
 import Textarea from 'react-textarea-autosize'
 import { toast } from 'sonner'
-import { UserMessage } from './stocks/message'
+import { SpinnerMessage, UserMessage } from './stocks/message'
+import { useGlobalState } from '@/context/GlobalContext';
+import { Card } from './ui/card'
+import PdfReader from './PdfReader'
 
 export function PromptForm({
   input,
@@ -30,6 +34,10 @@ export function PromptForm({
   input: string
   setInput: (value: string) => void
 }) {
+
+  // @ts-ignore
+  const {uploadedPdfUrls, setUploadedUrls} = useGlobalState()
+
   const { formRef, onKeyDown } = useEnterSubmit()
   const inputRef = React.useRef<HTMLTextAreaElement>(null)
   const { submitUserMessage } = useActions()
@@ -41,6 +49,7 @@ export function PromptForm({
     {
       text: string
       name: string
+      url :string
     }[]
   >([])
 
@@ -119,6 +128,7 @@ export function PromptForm({
     if (pdfFiles.length > 0) {
       for (const file of pdfFiles) {
         const fileName = file.name
+        const fileUrl = URL.createObjectURL(file)
         const formData = new FormData()
         formData.append('file', file)
         try {
@@ -130,8 +140,11 @@ export function PromptForm({
           if (res.data?.text) {
             setUploadedPdfFiles(prev => [
               ...prev,
-              { name: fileName, text: res.data.text }
+              { name: fileName, text: res.data.text, url:fileUrl }
             ])
+
+            // @ts-ignore
+            setUploadedUrls({ name: fileName, text: res.data.text, url:fileUrl })
           }
         } catch (error) {
           toast.error('Error uploading pdf file.')
@@ -360,6 +373,11 @@ export function PromptForm({
                     setUploadedPdfFiles(prevFile =>
                       prevFile.filter((_, i) => i !== index)
                     )
+
+                    if(uploadedPdfFiles && uploadedPdfFiles.length >= 1) {
+                      setUploadedUrls(uploadedPdfFiles[uploadedPdfFiles.length - 1])
+                    }
+                    setUploadedUrls(null)
                   }}
                 >
                   <IconTrash className="w-4 h-4" />
@@ -368,6 +386,20 @@ export function PromptForm({
               </div>
             )
           })}
+          {isUploading && (
+              <div
+              className="relative h-12 w-12 flex items-center justify-center bg-black mx-1 rounded-lg "
+            >
+              <Button
+                variant="outline"
+                size="icon"
+                className="absolute  text-red-500 bg-white rounded-full p-1"
+              >
+                <SpinnerIcon />
+                <span className="sr-only">Uploading PDF</span>
+              </Button>
+            </div>
+          )}
           {uploadingCSVFiles.map((_, index) => {
             return (
               <div
@@ -420,6 +452,7 @@ export function PromptForm({
           </TooltipTrigger>
           <TooltipContent>Send message</TooltipContent>
         </Tooltip>
+      {uploadedPdfUrls && <PdfReader pdfUrls={uploadedPdfUrls} />}
       </div>
 
       <p className="text-xs text-gray-300 ml-4 transition-opacity duration-300 ease-in-out text-center mt-2">
