@@ -29,7 +29,7 @@ async function UserOrLogin() {
           <SidebarToggle />
         </>
       ) : (
-        <Link href="https://www.bionicdiamond.com/" rel="nofollow">
+        <Link href="https://research.bionicdiamond.com/" rel="nofollow">
           <img className="size-6 object-contain" src="/images/gemini.png" alt="gemini logo" />
         </Link>
       )}
