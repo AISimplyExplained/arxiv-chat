@@ -1,5 +1,4 @@
 // @ts-nocheck
-
 'use client';
 import * as React from "react"
 import { Badge } from "@/components/ui/badge"
@@ -19,7 +18,6 @@ export function CategoryMultiSelect({ categories }: MultiSelectProps) {
   const { submitUserMessage } = useActions<typeof AI>();
   const [selected, setSelected] = React.useState<string[]>([]);
   const [inputValue, setInputValue] = React.useState('');
-  const [customCategory, setCustomCategory] = React.useState('');
 
   const filteredCategories = categories.filter(
     category => !selected.includes(category) && category.toLowerCase().includes(inputValue.toLowerCase())
@@ -41,10 +39,17 @@ export function CategoryMultiSelect({ categories }: MultiSelectProps) {
     setSelected(prev => prev.filter(item => item !== category));
   };
 
-  const handleAddCustomCategory = () => {
-    if (customCategory && !selected.includes(customCategory)) {
-      setSelected(prev => [...prev, customCategory]);
-      setCustomCategory('');
+  const handleAddCategory = () => {
+    if (inputValue && !selected.includes(inputValue)) {
+      setSelected(prev => [...prev, inputValue]);
+      setInputValue('');
+    }
+  };
+
+  const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleAddCategory();
     }
   };
 
@@ -68,18 +73,13 @@ export function CategoryMultiSelect({ categories }: MultiSelectProps) {
         <div className="flex gap-2 items-center">
           <Input
             type="text"
-            placeholder="Search categories..."
+            placeholder="Search or add categories..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleInputKeyDown}
           />
-          <Input
-            type="text"
-            placeholder="Add category..."
-            value={customCategory}
-            onChange={(e) => setCustomCategory(e.target.value)}
-          />
-          <div 
-            onClick={handleAddCustomCategory}
+          <div
+            onClick={handleAddCategory}
             className="cursor-pointer border border-gray-100 rounded-lg p-[8px] transition duration-200 hover:border-black active:border-gray-200"
           >
             <Check strokeWidth={1} size={20} />

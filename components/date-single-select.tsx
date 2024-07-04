@@ -11,6 +11,7 @@ export function DateSelect() {
   const [selectedDate, setSelectedDate] = React.useState<string | null>(null);
   // const [customDate, setCustomDate] = React.useState<string>('');
   const [, setMessages] = useUIState<typeof AI>();
+  // @ts-ignore
   const { submitUserMessage } = useActions<typeof AI>();
 
   console.log(selectedDate)
@@ -18,20 +19,20 @@ export function DateSelect() {
   const predefinedRanges = [
     'Past 3 months',
     'Past 6 months',
-    'Past 1 year',
-    'Past 2 years'
+    'Past 12 months',
+    'Greater than 1 year'
   ];
 
   const calculatePastDate = (range: string): string => {
     const today = new Date();
     switch (range) {
-      case 'last 3 months':
+      case 'Past 3 months':
         return new Date(today.setMonth(today.getMonth() - 3)).toLocaleDateString('en-CA', { year: 'numeric', month: '2-digit' });
-      case 'last 6 months':
+      case 'Past 6 months':
         return new Date(today.setMonth(today.getMonth() - 6)).toLocaleDateString('en-CA', { year: 'numeric', month: '2-digit' });
-      case 'last 1 year':
+      case 'Past 12 months':
         return new Date(today.setFullYear(today.getFullYear() - 1)).toLocaleDateString('en-CA', { year: 'numeric', month: '2-digit' });
-      case 'last 2 years':
+      case 'Greater than 1 year':
         return new Date(today.setFullYear(today.getFullYear() - 2)).toLocaleDateString('en-CA', { year: 'numeric', month: '2-digit' });
       default:
         return today.toLocaleDateString('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' });
