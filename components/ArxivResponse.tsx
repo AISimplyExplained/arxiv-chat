@@ -29,7 +29,7 @@ export const ArxivResponse = ({ papers }) => {
               setPdfName({title: paper.title, author: paper.authors[0]})
               setSelectedPdfUrl(paper.links[1].href)
             }}
-            >View pdf</Button>
+            >View PDF</Button>
           </CardFooter>
         </Card>
       ))}
