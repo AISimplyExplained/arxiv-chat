@@ -16,53 +16,52 @@ import {
   spinner,
   BotCard,
   BotMessage,
-  SystemMessage,
+  SystemMessage
 } from '@/components/stocks'
 import { SpinnerMessage, UserMessage } from '@/components/stocks/message'
 import { z } from 'zod'
 import { CategoryMultiSelect } from '@/components/category-multi-select'
 import { DateSelect } from '@/components/date-single-select'
 import { ArxivResponse } from '@/components/ArxivResponse'
-import {
-  runAsyncFnWithoutBlocking,
-  sleep,
-  nanoid
-} from '@/lib/utils'
+import { runAsyncFnWithoutBlocking, sleep, nanoid } from '@/lib/utils'
 import { saveChat } from '@/app/actions'
 import { Chat, Message } from '@/lib/types'
 import { auth } from '@/auth'
 
 function parseXML(xml) {
-  const parser = new DOMParser();
-  const xmlDoc = parser.parseFromString(xml, 'text/xml');
+  const parser = new DOMParser()
+  const xmlDoc = parser.parseFromString(xml, 'text/xml')
 
-  const entries = xmlDoc.getElementsByTagName('entry');
-  const results = [];
+  const entries = xmlDoc.getElementsByTagName('entry')
+  const results = []
 
   for (let i = 0; i < entries.length; i++) {
-    const entry = entries[i];
+    const entry = entries[i]
 
-    const id = entry.getElementsByTagName('id')[0].textContent;
-    const updated = entry.getElementsByTagName('updated')[0].textContent;
-    const published = entry.getElementsByTagName('published')[0].textContent;
-    const title = entry.getElementsByTagName('title')[0].textContent.trim();
-    const summary = entry.getElementsByTagName('summary')[0].textContent.trim();
+    const id = entry.getElementsByTagName('id')[0].textContent
+    const updated = entry.getElementsByTagName('updated')[0].textContent
+    const published = entry.getElementsByTagName('published')[0].textContent
+    const title = entry.getElementsByTagName('title')[0].textContent.trim()
+    const summary = entry.getElementsByTagName('summary')[0].textContent.trim()
 
-    const authors = [];
-    const authorElements = entry.getElementsByTagName('author');
+    const authors = []
+    const authorElements = entry.getElementsByTagName('author')
     for (let j = 0; j < authorElements.length; j++) {
-      const author = authorElements[j].getElementsByTagName('name')[0].textContent;
-      authors.push(author);
+      const author =
+        authorElements[j].getElementsByTagName('name')[0].textContent
+      authors.push(author)
     }
 
-    const links = [];
-    const linkElements = entry.getElementsByTagName('link');
+    const links = []
+    const linkElements = entry.getElementsByTagName('link')
     for (let k = 0; k < linkElements.length; k++) {
       const link = {
-        href: linkElements[k].getAttribute('href')?.startsWith('http://') ? linkElements[k].getAttribute('href').replace('http://', 'https://') : linkElements[[k]].getAttribute('href'),
+        href: linkElements[k].getAttribute('href')?.startsWith('http://')
+          ? linkElements[k].getAttribute('href').replace('http://', 'https://')
+          : linkElements[[k]].getAttribute('href'),
         rel: linkElements[k].getAttribute('rel')
-      };
-      links.push(link);
+      }
+      links.push(link)
     }
 
     results.push({
@@ -73,29 +72,82 @@ function parseXML(xml) {
       summary,
       authors,
       links
-    });
+    })
   }
-  return results;
+  return results
 }
 
 async function fetchArxiv(query) {
   console.log(query)
   try {
-    const response = await fetch(`https://export.arxiv.org/api/query?search_query=${encodeURIComponent(query)}&start=0&max_results=5`);
-    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-    const xml = await response.text();
+    const response = await fetch(
+      `https://export.arxiv.org/api/query?search_query=${encodeURIComponent(query)}&start=0&max_results=5`
+    )
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`)
+    const xml = await response.text()
     const json = parseXML(xml)
-    return json;
+    return json
   } catch (error) {
-    console.error('Error fetching or converting data:', error);
-    throw error;
+    console.error('Error fetching or converting data:', error)
+    throw error
   }
 }
 
-async function submitUserMessage(content: string) {
+type TextPart = {
+  type: 'text'
+  text: string
+}
+
+type ImagePart = {
+  type: 'image'
+  image: string
+}
+
+type MessageContent = TextPart | ImagePart
+
+
+async function submitUserMessage(
+  content: string,
+  model:string,
+  images?:string[],
+  pdfFiles: {name:string, text:string}[],
+  csvFiles: {name:string, text:string}[]
+) {
   'use server'
 
   const aiState = getMutableAIState<typeof AI>()
+
+  const messageContent: MessageContent[] = []
+
+  if (content) {
+    messageContent.push({ type: 'text', text: content })
+  }
+
+  if (pdfFiles && pdfFiles.length > 0) {
+    pdfFiles.map(val => {
+      messageContent.push({
+        type: 'text',
+        // To ensure that AI reads this text in PDF formate
+        text:
+          'Treat the below text as pdf. \n' +
+          val.text +
+          '\n here, this Pdf ends.'
+      })
+    })
+  }
+
+  if (csvFiles && csvFiles.length > 0) {
+    csvFiles.forEach(file => {
+      messageContent.push({
+        type: 'text',
+        // To ensure that AI reads this text in CSV formate
+        text:
+          'Treat the below text as csv data \n' +
+          file.text +
+          '\n Csv data ends here.'
+      })
+    })
+  }
 
   aiState.update({
     ...aiState.get(),
@@ -104,7 +156,7 @@ async function submitUserMessage(content: string) {
       {
         id: nanoid(),
         role: 'user',
-        content
+        content: messageContent
       }
     ]
   })
@@ -113,7 +165,7 @@ async function submitUserMessage(content: string) {
   let textNode: undefined | React.ReactNode
 
   const result = await streamUI({
-    model: openai('gpt-3.5-turbo'),
+    model: openai('gpt-4o'),
     initial: <SpinnerMessage />,
     system: `\
     You are an arXiv research paper assistant. You can help users find and discuss research papers from various scientific fields.
@@ -180,10 +232,17 @@ async function submitUserMessage(content: string) {
     },
     tools: {
       show_category_selection: {
-        description: 'Show a UI for the user to select subcategories of research papers.',
+        description:
+          'Show a UI for the user to select subcategories of research papers.',
         parameters: z.object({
-          categories: z.array(z.string()).describe('List of subcategories to choose from'),
-          title: z.string().describe('The title for the category selection UI (usually the main category name)'),
+          categories: z
+            .array(z.string())
+            .describe('List of subcategories to choose from'),
+          title: z
+            .string()
+            .describe(
+              'The title for the category selection UI (usually the main category name)'
+            )
         }),
         generate: async function* ({ categories, title }) {
           yield (
@@ -235,7 +294,8 @@ async function submitUserMessage(content: string) {
         }
       },
       show_date_range_selection: {
-        description: 'Show a UI for the user to select a date range for research papers.',
+        description:
+          'Show a UI for the user to select a date range for research papers.',
         parameters: z.object({}),
         generate: async function* () {
           yield (
@@ -289,15 +349,23 @@ async function submitUserMessage(content: string) {
       show_research_papers: {
         description: 'A tool for calling arxiv api to search research papers.',
         parameters: z.object({
-          query: z.string().describe('The search query to be included in the arXiv URL parameter'),
-          time: z.string().describe(`The specific date for which to search results, formatted as a year-month (e.g., 2023-05), or can be empty string if not specified`)
+          query: z
+            .string()
+            .describe(
+              'The search query to be included in the arXiv URL parameter'
+            ),
+          time: z
+            .string()
+            .describe(
+              `The specific date for which to search results, formatted as a year-month (e.g., 2023-05), or can be empty string if not specified`
+            )
         }),
         generate: async function* ({ query, time }) {
           yield <SpinnerMessage />
 
           await sleep(1000)
 
-          const papers = await fetchArxiv(query + " " + time)
+          const papers = await fetchArxiv(query + ' ' + time)
 
           const toolCallId = nanoid()
 
@@ -441,3 +509,4 @@ export const getUIStateFromAIState = (aiState: Chat) => {
         ) : null
     }))
 }
+
