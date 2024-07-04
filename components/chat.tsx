@@ -130,7 +130,7 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
         className={`bg-black fixed right-0 top-0 bottom-0 w-[45%] mt-16 transition ${selectedPdfUrl ? 'block' : 'hidden'}`}
       >
         <div className="flex justify-between items-center px-4">
-          <Button className='bg-white text-black hover:opacity-85' variant={"outline"} onClick={readPdfFile} disabled={summeryLoading}>Pdf Summery</Button>
+          <Button className='bg-white text-black hover:opacity-85' variant={"outline"} onClick={readPdfFile} disabled={summeryLoading}>Pdf Summary</Button>
           <X
             className="text-white m-4 cursor-pointer rounded-full border-2 border-gray-200"
             onClick={() => setSelectedPdfUrl(null)}
