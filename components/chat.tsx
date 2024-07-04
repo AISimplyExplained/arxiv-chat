@@ -168,7 +168,7 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
             onClick={readPdfFile}
             disabled={summeryLoading}
           >
-            PDF Summary
+            Summarize this PDF
           </Button>
           <X
             className="text-white m-4 cursor-pointer rounded-full border-2 border-gray-200"
