@@ -30,7 +30,6 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-
     const assistant = await openai.beta.assistants.create({
       instructions:
         'You are a helpful data science assistant. When you presented with data you do a require calculation and present the result.',
@@ -62,15 +61,26 @@ export async function POST(request: Request) {
     })
 
     let result = ''
+    let imageId = ''
 
     if (run.status === 'completed') {
       const messages = await openai.beta.threads.messages.list(run.thread_id)
       for (const message of messages.data.reverse()) {
         // @ts-ignore
-        console.log(`${message.role} > ${message.content[0].text.value}`)
+        console.log(`${message.role} > ${message.content[0]?.text?.value}`)
         if (message.role === 'assistant') {
           // @ts-ignore
-          result = message.content[0].text.value
+          // result = message.content[0]?.text?.value
+          for (const content of message.content) {
+            // console.log("content", content)
+            if (content.type === 'image_file') {
+              imageId = content.image_file.file_id
+            }
+            if (content.type === 'text') {
+              // @ts-ignore
+              result = content.text.value
+            }
+          }
         }
       }
     } else {
@@ -81,7 +91,11 @@ export async function POST(request: Request) {
       )
     }
 
-    return NextResponse.json({ message: result })
+    if(result === '') {
+      result = "Please try again."
+    }
+
+    return NextResponse.json({ message: result, imageId })
   } catch (error) {
     console.log(error)
     return NextResponse.json(
