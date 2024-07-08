@@ -11,13 +11,7 @@ export const maxDuration = 295
 
 export const fileIds = [
   'file-2MJ20Vt5PhDWePSd7aiMFcsv',
-  'file-osL89ZZYvF5c2u1TJkPIBn73',
-  // 'file-3d2a9C5qlpakv2q8TPGOfaeI',
-  // 'file-E0SFqf5eHkEyU0fUXSI2S53Y',
-  // 'file-9wOeoaAaZsiTCN3HfXMZLk8i',
-  // 'file-EX0Rsqep4VI3KgGg9XU0R2iX',
-  // 'file-WWddN7CZiw9eLlcQXzhpYRFB',
-  // 'file-JL5wHFY8RsjPydapZbyGEMnD'
+  'file-osL89ZZYvF5c2u1TJkPIBn73'
 ]
 
 interface RequestBody {
@@ -36,7 +30,7 @@ export async function POST(request: Request) {
     }
     const assistant = await openai.beta.assistants.create({
       instructions:
-        'You are a helpful data science assistant. When you presented with data you do a require calculation and present the result.',
+        'You are a helpful data science assistant. When you presented with data you do a require calculation and present the result. Also do not do too many steps, if the data is not available, use the the data most accurate to your knowledge as a placeholder.',
       model: 'gpt-4o',
       tools: [{ type: 'code_interpreter' }],
       tool_resources: {
