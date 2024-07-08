@@ -36,7 +36,7 @@ import { auth } from '@/auth'
 import axios from 'axios'
 
 
-export const maxDuration = 295;
+export const maxDuration = 300;
 
 
 function parseXML(xml) {
