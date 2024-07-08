@@ -18,7 +18,7 @@ import {
   BotMessage,
   SystemMessage
 } from '@/components/stocks'
-import { SpinnerMessage, UserMessage } from '@/components/stocks/message'
+import { SpinnerMessage, ToolDataAgentLoading, UserMessage } from '@/components/stocks/message'
 import { z } from 'zod'
 import { CategoryMultiSelect } from '@/components/category-multi-select'
 import { DateSelect } from '@/components/date-single-select'
@@ -27,6 +27,7 @@ import { runAsyncFnWithoutBlocking, sleep, nanoid } from '@/lib/utils'
 import { saveChat } from '@/app/actions'
 import { Chat, Message } from '@/lib/types'
 import { auth } from '@/auth'
+import axios from 'axios'
 
 function parseXML(xml) {
   const parser = new DOMParser()
@@ -105,13 +106,12 @@ type ImagePart = {
 
 type MessageContent = TextPart | ImagePart
 
-
 async function submitUserMessage(
   content: string,
-  model:string,
-  images?:string[],
-  pdfFiles: {name:string, text:string}[],
-  csvFiles: {name:string, text:string}[]
+  model: string,
+  images?: string[],
+  pdfFiles: { name: string; text: string }[],
+  csvFiles: { name: string; text: string }[]
 ) {
   'use server'
 
@@ -406,6 +406,65 @@ async function submitUserMessage(
             </BotCard>
           )
         }
+      },
+      data_agent: {
+        description:
+          'A tool for doing Data science work to analyze data. The data is already present. If any question asked about canada census data, you use this tool',
+        parameters: z.object({
+          prompt: z
+            .string()
+            .describe('The prompt to be included in data agent tool')
+        }),
+        generate: async function* ({ prompt }) {
+          yield <ToolDataAgentLoading />
+
+          await sleep(1000)
+
+          let result = null
+
+          try {
+            const res = (await axios.post('http://localhost:3000/api/code-interpreter', { prompt }))
+              .data
+            result = res
+          } catch (error) {
+            console.log('data agent error', error)
+            result = { message: 'Please try again. Something went wrong.' }
+          }
+
+          const toolCallId = nanoid()
+
+          aiState.done({
+            ...aiState.get(),
+            messages: [
+              ...aiState.get().messages,
+              {
+                id: nanoid(),
+                role: 'assistant',
+                content: [
+                  {
+                    type: 'tool-call',
+                    toolName: 'data_agent',
+                    toolCallId,
+                    args: { prompt }
+                  }
+                ]
+              },
+              {
+                id: nanoid(),
+                role: 'tool',
+                content: [
+                  {
+                    type: 'tool-result',
+                    toolName: 'data_agent',
+                    toolCallId,
+                    result: result.message
+                  }
+                ]
+              }
+            ]
+          })
+          return <BotMessage content={result.message} />
+        }
       }
     }
   })
@@ -509,4 +568,3 @@ export const getUIStateFromAIState = (aiState: Chat) => {
         ) : null
     }))
 }
-
