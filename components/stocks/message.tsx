@@ -11,7 +11,7 @@ import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import { StreamableValue } from 'ai/rsc'
 import { useStreamableText } from '@/lib/hooks/use-streamable-text'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import {
   Accordion,
@@ -97,6 +97,43 @@ export function BotMessage({
     </div>
   )
 }
+
+
+export function ImageDisplay({imageId, className}: {imageId?:string, className?:string}) {
+  const [url, setUrl] = useState<string|null>(null)
+  useEffect(() => {
+    async function getImage() {
+      try {
+        
+      const imageRes = await fetch(
+        `/api/graph-image?fileId=${imageId}`
+      )
+
+      const blob = await imageRes.blob()
+      const image =  URL.createObjectURL(blob)
+      setUrl(image)
+
+      } catch (error) {
+        console.log("error", error)
+      }
+    }
+    if(imageId) {
+      getImage()
+    }
+  }, [])
+  return (
+    <div className={cn('group relative flex items-start md:-ml-12 mt-6', className)}>
+     {url && (<>
+      <div className="ml-4 flex-1 space-y-2 overflow-hidden px-1">
+      <img 
+          src={url}
+          alt=""
+        />
+      </div> </>)}
+    </div>
+  )
+}
+
 
 // Tool result components
 export function ToolImages({content, className}: 

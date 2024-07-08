@@ -18,7 +18,13 @@ import {
   BotMessage,
   SystemMessage
 } from '@/components/stocks'
-import { SpinnerMessage, ToolDataAgentLoading, UserMessage } from '@/components/stocks/message'
+import {
+  ImageDisplay,
+  SpinnerMessage,
+  ToolDataAgentLoading,
+  ToolImages,
+  UserMessage
+} from '@/components/stocks/message'
 import { z } from 'zod'
 import { CategoryMultiSelect } from '@/components/category-multi-select'
 import { DateSelect } from '@/components/date-single-select'
@@ -417,15 +423,19 @@ async function submitUserMessage(
         }),
         generate: async function* ({ prompt }) {
           yield <ToolDataAgentLoading />
-
           await sleep(1000)
-
           let result = null
 
           try {
-            const res = (await axios.post('http://localhost:3000/api/code-interpreter', { prompt }))
-              .data
-            result = res
+            const res = (
+              await axios.post(`${process.env.URL}/api/code-interpreter`, {
+                prompt
+              })
+            ).data
+            result = {
+              message: res.message,
+              imageUrl: res.imageId
+            }
           } catch (error) {
             console.log('data agent error', error)
             result = { message: 'Please try again. Something went wrong.' }
@@ -463,7 +473,12 @@ async function submitUserMessage(
               }
             ]
           })
-          return <BotMessage content={result.message} />
+          return (
+            <>
+              <BotMessage content={result.message} />
+              <ImageDisplay imageId={result?.imageUrl} />
+            </>
+          )
         }
       }
     }
@@ -474,7 +489,6 @@ async function submitUserMessage(
     display: result.value
   }
 }
-
 export type AIState = {
   chatId: string
   messages: Message[]
