@@ -104,6 +104,58 @@ async function fetchArxiv(query) {
   }
 }
 
+async function getWebSearches(query) {
+  const endpoint = "https://api.bing.microsoft.com/v7.0/search";      
+  const urlQuery = encodeURIComponent(query);      
+  const apiKey = process.env.BING_SEARCH_API_KEY
+  const options = {
+    mkt: "en-us",
+    safeSearch: "moderate",
+    textDecorations: true,
+    textFormat: "raw",
+    count: 10,
+    offset: 0,
+  };
+  const queryParams = new URLSearchParams({
+    q: urlQuery,
+    ...options,
+  }).toString();
+
+  const url = `${endpoint}?${queryParams}`;      
+  const headers = {
+    "Ocp-Apim-Subscription-Key": apiKey,
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+  };
+
+  try {
+    const response = await fetch(url, { headers });      
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const linksArray = [];
+    const data = await response.json();
+    console.log(data.webPages.value)
+    const snippets = []
+
+    if(data?.webPages?.value) {
+      data.webPages.value.forEach((page) => {
+        if(page.snippet) {
+          snippets.push(page.snippet)
+        }
+      })
+    }
+    const resultString = JSON.stringify(snippets)
+
+    return {resultString, linksArray};
+  } catch (error) {
+    console.log("Search error: \n", error)
+    return {resultString: "", linksArray: ""}
+  }
+}
+
+
 type TextPart = {
   type: 'text'
   text: string
@@ -419,21 +471,31 @@ async function submitUserMessage(
       },
       data_agent: {
         description:
-          'A tool for doing Data science work to analyze data. The data is already present. If any question asked about canada census data, you use this tool',
+          'A tool for doing Data science work to analyze data. First generate the query to get data from web, The query will retrieve specific data. If user asked to plot the graph you can use this tool for that also. Any thing related to data or stats you can use this tool. Do not ask the user for conformation just use this tool.',
         parameters: z.object({
           prompt: z
             .string()
-            .describe('The prompt to be included in data agent tool')
+            .describe('The prompt to be included in data agent tool'),
+          query: z
+            .string()
+            .describe('The query to search the internet to find the important data.')
         }),
-        generate: async function* ({ prompt }) {
+        generate: async function* ({ prompt, query }) {
           yield <ToolDataAgentLoading />
           await sleep(1000)
           let result = null
 
           try {
+
+            const {resultString} = await getWebSearches(query)
+
+            if(!resultString) {
+              throw new Error("Failed.")
+            }
+
             const res = (
               await axios.post(`${process.env.URL}/api/code-interpreter`, {
-                prompt
+                prompt, content: resultString 
               })
             ).data
             result = {
@@ -441,7 +503,6 @@ async function submitUserMessage(
               imageUrl: res.imageId
             }
           } catch (error) {
-            console.log('data agent error', error)
             result = { message: 'Please try again. Something went wrong.' }
           }
 
