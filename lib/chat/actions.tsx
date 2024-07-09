@@ -35,6 +35,10 @@ import { Chat, Message } from '@/lib/types'
 import { auth } from '@/auth'
 import axios from 'axios'
 
+
+export const maxDuration = 300;
+
+
 function parseXML(xml) {
   const parser = new DOMParser()
   const xmlDoc = parser.parseFromString(xml, 'text/xml')

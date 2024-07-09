@@ -39,6 +39,7 @@ export async function POST(request: Request) {
          the file, Then use user provided data. Last part of the response should be precise and answer every question asked by user. Do not mention if you failed to get data from files just answer the question
           in the last response, we are showing that response to user.
         `,
+
       model: 'gpt-4o',
       tools: [{ type: 'code_interpreter' }],
       tool_resources: {
