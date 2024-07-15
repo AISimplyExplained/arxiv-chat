@@ -471,14 +471,14 @@ async function submitUserMessage(
       },
       data_agent: {
         description:
-          'A tool for doing Data science work to analyze data.You generate the prompt according to user need. Canada has 10 province. According to user question please generate province name. example: if user provided city name Toronto you generate province name Ontario. Even if user does not specify the province generate it using previous prompt. If user asked to plot the graph for canada census data, you can use this tool for that also. Any thing related canada census, you can use this tool. Do not ask the user for conformation just use this tool.',
+          'A tool for doing Data science work to analyze data.You generate the prompt according to user need. Canada has 10 province. According to user question please generate province name. If user did not pass the Province name or city. Generate it using previous prompt. example: if user provided city name Toronto you generate province name Ontario. Even if user does not specify the province generate it using previous prompt. If user asked to plot the graph for canada census data, you can use this tool for that also. Any thing related canada census, you can use this tool. Do not ask the user for conformation just use this tool.',
         parameters: z.object({
           prompt: z
             .string()
             .describe('The prompt to be included in data agent tool'),
-          province: z
-            .string()
-            .describe("One of province in Canada.")
+          // province: z
+          //   .string()
+          //   .describe("One of province in Canada.")
         }),
         generate: async function* ({ prompt,province }) {
           yield <ToolDataAgentLoading />
