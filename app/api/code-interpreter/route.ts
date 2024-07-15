@@ -8,38 +8,39 @@ const openai = new OpenAI({
 export const maxDuration = 295
 
 export const fileIds = [
-  'file-2MJ20Vt5PhDWePSd7aiMFcsv',
-  'file-osL89ZZYvF5c2u1TJkPIBn73'
-  // 'file-3d2a9C5qlpakv2q8TPGOfaeI',
-  // 'file-E0SFqf5eHkEyU0fUXSI2S53Y',
-  // 'file-9wOeoaAaZsiTCN3HfXMZLk8i',
-  // 'file-EX0Rsqep4VI3KgGg9XU0R2iX',
-  // 'file-WWddN7CZiw9eLlcQXzhpYRFB',
-  // 'file-JL5wHFY8RsjPydapZbyGEMnD'
+  // 'file-qnuRYc9XbS8F0p8DkpPzsE5e',
+  // 'file-lHoUCkiic3JfrZ8PMzwsteq6',
+  // 'file-IPcDPuapf5415JxYTH5wbFXC',
+  // 'file-XvKZvKDoAMCNfhF5NpSGxqba',
+  // 'file-kCR3tWdG1FIMqndU5Xjl1jzS',
+  // 'file-CyaPowqmlf1G4mtKFfcDfk0V',
+  'file-rtEtHND0tOt4PJ1t9PyiWhxP',
+  // 'file-gA6GNqEiDAkbkrX8fstAUpf3',
+  // 'file-lqTCUL4IUfGzS5kELKvrekCn',
+  // 'file-S7W0wBggT9mjhU2ODdHYXwEJ'
 ]
 
 interface RequestBody {
   prompt?: string
-  content?: string
 }
 
 export async function POST(request: Request) {
   try {
-    const { prompt, content } = (await request.json()) as RequestBody
+    const { prompt } = (await request.json()) as RequestBody
 
-    if (!prompt || !content) {
+    if (!prompt) {
       return NextResponse.json(
-        { error: 'Please provide your required prompt and content.' },
+        { error: 'Please provide your required prompt' },
         { status: 400 }
       )
     }
-    const assistant = await openai.beta.assistants.create({
-      instructions: `You are a helpful data science assistant. When you presented with data and question. you do a required calculation and present the result. 
-         If required data is not presented in the given dataset, please refer the data given by user answer the question according to that dataset. If you failed to get the data from the file or data is not present in 
-         the file, Then use user provided data. Last part of the response should be precise and answer every question asked by user. Do not mention if you failed to get data from files just answer the question
-          in the last response, we are showing that response to user.
-        `,
 
+    const assistant = await openai.beta.assistants.create({
+      instructions: `You are a helpful data assistant tool.
+       You will analyze the provided HTML file and get the data for the user's question. Use Buietyfull soup library to get data.
+       Perform any necessary calculations and answer the user's question. 
+       You can provide answers such as total population, number of men or women, or plot graphs for population growth.
+       The final response should contain the answer to the user's question or the requested graph.`,
       model: 'gpt-4o',
       tools: [{ type: 'code_interpreter' }],
       tool_resources: {
@@ -51,10 +52,6 @@ export async function POST(request: Request) {
 
     const thread = await openai.beta.threads.create({
       messages: [
-        {
-          content: content,
-          role: 'user'
-        },
         {
           role: 'user',
           content: prompt,
@@ -68,10 +65,7 @@ export async function POST(request: Request) {
 
     let run = await openai.beta.threads.runs.createAndPoll(thread.id, {
       assistant_id: assistant.id,
-      instructions: `Please Provide a detailed answer using provided CSV file. If you can not get the data from given csv file please refer this data and do not mention data is not present in the data. Just pretend you got the 
-      answer by doing calculation from the given dataset in last response. Just make really sure that last response just contain result never mention the source of data and unavailability of data Just answer.
-      Content starts here: \n '${content}' \n content ends here. \n 
-      Last part of the answer should be precise and should answer every question provided by the user.`
+      instructions: `Please analyze the provided HTML file to answer the user's question. You can use buitifulsoup library to get the answer. You may need to sum values, perform calculations, or generate plots based on the question. Provide a precise answer or the requested graph. Do not mention the file type in the response.`
     })
 
     let result = ''
@@ -91,8 +85,9 @@ export async function POST(request: Request) {
               imageId = content.image_file.file_id
             }
             if (content.type === 'text') {
-              // @ts-ignore
-              result = content.text.value
+              if (content.text.value) {
+                result = content.text.value
+              }
             }
           }
         }
