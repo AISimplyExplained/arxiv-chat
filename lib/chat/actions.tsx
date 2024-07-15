@@ -471,31 +471,27 @@ async function submitUserMessage(
       },
       data_agent: {
         description:
-          'A tool for doing Data science work to analyze data. First generate the query to get data from web, The query will retrieve specific data. If user asked to plot the graph you can use this tool for that also. Any thing related to data or stats you can use this tool. Do not ask the user for conformation just use this tool.',
+          'A tool for doing Data science work to analyze data.You generate the prompt according to user need. Canada has 10 province. According to user question please generate province name. example: if user provided city name Toronto you generate province name Ontario. Even if user does not specify the province generate it using previous prompt. If user asked to plot the graph for canada census data, you can use this tool for that also. Any thing related canada census, you can use this tool. Do not ask the user for conformation just use this tool.',
         parameters: z.object({
           prompt: z
             .string()
             .describe('The prompt to be included in data agent tool'),
-          query: z
+          province: z
             .string()
-            .describe('The query to search the internet to find the important data.')
+            .describe("One of province in Canada.")
         }),
-        generate: async function* ({ prompt, query }) {
+        generate: async function* ({ prompt,province }) {
           yield <ToolDataAgentLoading />
           await sleep(1000)
           let result = null
 
+          console.log("Prompt", prompt)
+          console.log("Province", province)
+
           try {
-
-            const {resultString} = await getWebSearches(query)
-
-            if(!resultString) {
-              throw new Error("Failed.")
-            }
-
             const res = (
               await axios.post(`${process.env.URL}/api/code-interpreter`, {
-                prompt, content: resultString 
+                prompt 
               })
             ).data
             result = {
