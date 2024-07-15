@@ -14,19 +14,36 @@ export const fileIds = [
   // 'file-XvKZvKDoAMCNfhF5NpSGxqba',
   // 'file-kCR3tWdG1FIMqndU5Xjl1jzS',
   // 'file-CyaPowqmlf1G4mtKFfcDfk0V',
-  'file-rtEtHND0tOt4PJ1t9PyiWhxP',
+  'file-rtEtHND0tOt4PJ1t9PyiWhxP'
+  // 'file-AhEbnNGLsWdZhxWXsdhggyZ1'
   // 'file-gA6GNqEiDAkbkrX8fstAUpf3',
   // 'file-lqTCUL4IUfGzS5kELKvrekCn',
   // 'file-S7W0wBggT9mjhU2ODdHYXwEJ'
 ]
 
+export const Province: { [key: string]: string } = {
+  Alberta: 'file-jzxeHICXtHlNu1wE3aeOcGVy',
+  'British Columbia': 'file-DMtBNH4LlPR3DLipygblzMhL',
+  Manitoba: 'file-MA42h4Eoi7raYMALCQD2xb04',
+  'New Brunswick': 'file-QJJKX3Fg12lMyviinp2xbtaP',
+  'Newfoundland and Labrador': 'file-PG18AA0SZzFgLwqcfIHcBNVB',
+  'Nova Scotia': 'file-9EPTjsPw2oyPeF4hY2oDY84D',
+  Ontario: 'file-rtEtHND0tOt4PJ1t9PyiWhxP',
+  'Prince Edward Island': 'file-V5GYv1xENlaqcT58TuLv4XKx',
+  Quebec: 'file-ChQ5HFKq0E4MFa4B04I4Txce',
+  Saskatchewan: 'file-16XTQcj2fP5bvrmweOKgN57O',
+  Canada: 'file-3xhirTrJ8iN0ZImbXUwN4HAO'
+}
+
 interface RequestBody {
   prompt?: string
+  province?: string
 }
 
 export async function POST(request: Request) {
   try {
-    const { prompt } = (await request.json()) as RequestBody
+    const { prompt, province } = (await request.json()) as RequestBody
+    const files = ['file-3xhirTrJ8iN0ZImbXUwN4HAO']
 
     if (!prompt) {
       return NextResponse.json(
@@ -34,6 +51,19 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
+
+    if (province) {
+      for (const key in Province) {
+        console.log(key)
+        if (key === province && Province[key]) {
+          files.pop()
+          files.push(Province[key])
+          break
+        }
+      }
+    }
+
+    console.log('Files', files)
 
     const assistant = await openai.beta.assistants.create({
       instructions: `You are a helpful data assistant tool.
@@ -45,7 +75,7 @@ export async function POST(request: Request) {
       tools: [{ type: 'code_interpreter' }],
       tool_resources: {
         code_interpreter: {
-          file_ids: fileIds
+          file_ids: files
         }
       }
     })
@@ -55,7 +85,7 @@ export async function POST(request: Request) {
         {
           role: 'user',
           content: prompt,
-          attachments: fileIds.map(id => ({
+          attachments: files.map(id => ({
             file_id: id,
             tools: [{ type: 'code_interpreter' }]
           }))

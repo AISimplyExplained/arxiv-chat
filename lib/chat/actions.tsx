@@ -34,6 +34,7 @@ import { saveChat } from '@/app/actions'
 import { Chat, Message } from '@/lib/types'
 import { auth } from '@/auth'
 import axios from 'axios'
+import { error } from 'console'
 
 
 export const maxDuration = 300;
@@ -471,15 +472,26 @@ async function submitUserMessage(
       },
       data_agent: {
         description:
-          'A tool for doing Data science work to analyze data.You generate the prompt according to user need. Canada has 10 province. According to user question please generate province name. If user did not pass the Province name or city. Generate it using previous prompt. example: if user provided city name Toronto you generate province name Ontario. Even if user does not specify the province generate it using previous prompt. If user asked to plot the graph for canada census data, you can use this tool for that also. Any thing related canada census, you can use this tool. Do not ask the user for conformation just use this tool.',
+        `A tool for doing Data science work to analyze data.You generate the prompt according to user need. Canada has 10 province. According to user question please generate province name. Province names are "
+          Alberta,
+          British Columbia,
+          Manitoba,
+          New Brunswick,
+          Newfoundland and Labrador,
+          Nova Scotia,
+          Ontario,
+          Prince Edward Island,
+          Quebec,
+          Saskatchewan". Select from one of these. If user asked about canada, then just use 'Canada', REMEMBER, It is really important to generate province. 
+         ,If user mention canada generate prompt for canada only. If user asked to plot the graph for canada census data, you can use this tool for that also. Any thing related canada census, you can use this tool. Do not ask the user for conformation just use this tool.`,
         parameters: z.object({
           prompt: z
             .string()
             .describe('The prompt to be included in data agent tool'),
-          // province: z
-          //   .string()
-          //   .describe("One of province in Canada.")
-        }),
+          province: z
+            .string()
+            .describe("The Province should be included in data agent tool. Generate this province.").default("")
+        }).required(),
         generate: async function* ({ prompt,province }) {
           yield <ToolDataAgentLoading />
           await sleep(1000)
@@ -489,9 +501,12 @@ async function submitUserMessage(
           console.log("Province", province)
 
           try {
+            if(!province || province === "") {
+              throw new Error("Please mention province.")
+            }
             const res = (
               await axios.post(`${process.env.URL}/api/code-interpreter`, {
-                prompt 
+                prompt , province
               })
             ).data
             result = {
@@ -499,7 +514,7 @@ async function submitUserMessage(
               imageUrl: res.imageId
             }
           } catch (error) {
-            result = { message: 'Please try again. Something went wrong.' }
+            result = { message: 'Please try again or refresh the page. Something went wrong.' }
           }
 
           const toolCallId = nanoid()
