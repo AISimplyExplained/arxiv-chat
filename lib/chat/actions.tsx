@@ -487,26 +487,35 @@ async function submitUserMessage(
         parameters: z.object({
           prompt: z
             .string()
-            .describe('The prompt to be included in data agent tool'),
-          province: z
-            .string()
-            .describe("The Province should be included in data agent tool. Generate this province.").default("")
+            .describe('The prompt to be included in data agent tool, and mention province in last part of the sentence'),
         }).required(),
-        generate: async function* ({ prompt,province }) {
+        generate: async function* ({ prompt}) {
           yield <ToolDataAgentLoading />
           await sleep(1000)
           let result = null
 
           console.log("Prompt", prompt)
-          console.log("Province", province)
-
+          let pr = ""
           try {
-            if(!province || province === "") {
-              throw new Error("Please mention province.")
-            }
+              const words = ['Alberta',
+                'British Columbia',
+                'Manitoba',
+                'New Brunswick',
+                'Newfoundland and Labrador',
+                'Nova Scotia',
+                'Ontario',
+                'Prince Edward Island',
+                'Quebec', 'Saskatchewan', 'Canada'] as const
+              const lowerStr = prompt.toLowerCase()
+              for (const word of words) {
+                if(lowerStr.includes(word.toLocaleLowerCase())) {
+                  pr = word
+                  break;
+                }
+              }
             const res = (
               await axios.post(`${process.env.URL}/api/code-interpreter`, {
-                prompt , province
+                prompt , province: pr
               })
             ).data
             result = {
@@ -514,6 +523,7 @@ async function submitUserMessage(
               imageUrl: res.imageId
             }
           } catch (error) {
+            console.log("error", error)
             result = { message: 'Please try again or refresh the page. Something went wrong.' }
           }
 
