@@ -22,16 +22,16 @@ export const fileIds = [
 ]
 
 export const Province: { [key: string]: string } = {
-  Alberta: 'file-jzxeHICXtHlNu1wE3aeOcGVy',
-  'British Columbia': 'file-DMtBNH4LlPR3DLipygblzMhL',
-  Manitoba: 'file-MA42h4Eoi7raYMALCQD2xb04',
-  'New Brunswick': 'file-QJJKX3Fg12lMyviinp2xbtaP',
-  'Newfoundland and Labrador': 'file-PG18AA0SZzFgLwqcfIHcBNVB',
-  'Nova Scotia': 'file-9EPTjsPw2oyPeF4hY2oDY84D',
-  Ontario: 'file-rtEtHND0tOt4PJ1t9PyiWhxP',
-  'Prince Edward Island': 'file-V5GYv1xENlaqcT58TuLv4XKx',
-  Quebec: 'file-ChQ5HFKq0E4MFa4B04I4Txce',
-  Saskatchewan: 'file-16XTQcj2fP5bvrmweOKgN57O',
+  Alberta: 'file-VdcgLEMuf1na3QZbSiq65upq',
+  'British Columbia': 'file-kt38GZu7MWIAsMFIeSZQuWXf',
+  Manitoba: 'file-inzr1q6KyjXA85egnmuGEzgE',
+  'New Brunswick': 'file-dY9hQj5gSPQBPLOPaCiXaZ66',
+  'Newfoundland and Labrador': 'file-WwrFKIhhww9isBCV6hrKeKBq',
+  'Nova Scotia': 'file-T4LVJFsgp1L3gKbEz0nZ04LM',
+  Ontario: 'file-YVk4jyKRXddF4rQpZHjyxykY',
+  'Prince Edward Island': 'file-6bSQKFSxriDpam8A54zYOE9z',
+  Quebec: 'file-DiUpkvaCLbyYRDb2hLSobQA0',
+  Saskatchewan: 'file-I0leWUlT7gFZNaPMORGQqJAJ',
   Canada: 'file-3xhirTrJ8iN0ZImbXUwN4HAO'
 }
 
