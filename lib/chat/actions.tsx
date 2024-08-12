@@ -566,6 +566,79 @@ async function submitUserMessage(
             </>
           )
         }
+      },
+
+      employee_agent: {
+        description:
+        `A tool for doing Data science work to analyze data of employee.
+        If Users ask about employee info, you use this tool. This tool calls api which has answer, you just provide a prompt.
+        Do not ask the user for conformation just use this tool.`,
+        parameters: z.object({
+          prompt: z
+            .string()
+            .describe('The prompt to be included in employee agent tool, The prompt should be precise.'),
+        }).required(),
+        generate: async function* ({ prompt}) {
+          yield <ToolDataAgentLoading />
+          await sleep(1000)
+          let result = null
+
+          console.log("Prompt", prompt)
+          try {
+            const res = (
+              await axios.post(`${process.env.URL}/api/employee`, {
+                prompt 
+              })
+            ).data
+            result = {
+              message: res.message,
+              imageUrl: res.imageId
+            }
+          } catch (error) {
+            console.log("error", error)
+            result = { message: 'Please try again or refresh the page. Something went wrong.' }
+          }
+
+          const toolCallId = nanoid()
+
+          aiState.done({
+            ...aiState.get(),
+            messages: [
+              ...aiState.get().messages,
+              {
+                id: nanoid(),
+                role: 'assistant',
+                content: [
+                  {
+                    type: 'tool-call',
+                    toolName: 'data_agent',
+                    toolCallId,
+                    args: { prompt }
+                  }
+                ]
+              },
+              {
+                id: nanoid(),
+                role: 'tool',
+                content: [
+                  {
+                    type: 'tool-result',
+                    toolName: 'data_agent',
+                    toolCallId,
+                    result: result.message
+                  }
+                ]
+              }
+            ]
+          })
+          return (
+            <>
+              <BotMessage content={result.message} />
+              <ImageDisplay imageId={result?.imageUrl} />
+            </>
+          )
+        }
+
       }
     }
   })
